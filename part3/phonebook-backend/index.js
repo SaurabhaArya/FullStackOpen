@@ -79,7 +79,6 @@ app.delete('/api/persons/:id', (req, res, next) => {
 const unknownEndPoint = (req, res, next) => {
   res.status(404).send({error: 'Unknown endpoint'})
 }
-
 app.use(unknownEndPoint)
 
 const errorHandler = (err, req, res, next) => {
@@ -88,7 +87,6 @@ const errorHandler = (err, req, res, next) => {
   }
   next(err)
 }
-
 app.use(errorHandler)
 
 const PORT = process.env.PORT
