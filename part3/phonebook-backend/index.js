@@ -12,27 +12,29 @@ app.use(cors())
 app.use(express.static('dist'))
 app.use(morgan(":method :url :status :res[content-length] - :response-time ms :post-body"))
 
-app.get('/api/persons', (req, res) => {
+app.get('/api/persons', (req, res, next) => {
   Person.find({})
     .then(resp => {
       res.json(resp)
     })
-    .catch(err => console.log(err))
+    .catch(err => next(err))
 })
 
-app.get('/api/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res, next) => {
   const id = req.params.id
   Person.findById(id)
-    .then(resp => {
-      res.json(resp)
+    .then(note => {
+      if (note) {
+        console.log(note);
+        res.json(resp)
+      } else {
+        res.status(404).end()
+      }
     })
-    .catch(err => {
-      console.log(err);
-      res.status(404).end()
-    })
+    .catch(err => next(err))
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
   if (!body.name || !body.number) {
     return res.status(400).json({
@@ -48,17 +50,46 @@ app.post('/api/persons', (req, res) => {
       console.log(resp);
       res.status(201).json(resp)
     })
-    .catch(err => console.log(err))
+    .catch(err => next(err))
 })
 
-app.delete('/api/persons/:id', (req, res) => {
+app.put('/api/persons/:id', (req, res, next) => {
+  const id = req.params.id
+  const body = req.body
+  const person = {
+    name: body.name,
+    number: body.number
+  }
+  Person.findByIdAndUpdate(id, person, {new: true})
+    .then(resp => {
+      res.json(resp)
+    })
+    .catch(err => next(err))
+})
+
+app.delete('/api/persons/:id', (req, res, next) => {
   const id = req.params.id
   Person.findByIdAndRemove(id)
     .then(resp => {
       res.status(214).end()
     })
-    .catch(err => console.log(err))
+    .catch(err => next(err))
 })
+
+const unknownEndPoint = (req, res, next) => {
+  res.status(404).send({error: 'Unknown endpoint'})
+}
+
+app.use(unknownEndPoint)
+
+const errorHandler = (err, req, res, next) => {
+  if (err.name === 'CastError') {
+    return res.status(400).send({error: 'malformatted id'})
+  }
+  next(err)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT)
