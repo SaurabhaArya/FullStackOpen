@@ -26,34 +26,37 @@ const App = () => {
       name: newName, 
       number: newPhone
     }
-    if (newName && newPhone) {
-      const personExists = persons.find(per => per.name.toLowerCase() === newName.toLowerCase())
-      if (
-        personExists && 
-        window.confirm(`${newName} is already added to phone book, replace the old number with a new one?`)
-      ) {
-        service.updatePerson(personExists.id, person)
-          .then(resp => {
-            setPersons(persons.map(per => per.id === resp.id ? resp : per))
-            showMsg(`Updated ${newName}'s number to  ${newPhone}`, 'success')
-            setNewName('')
-            setNewPhone('')
-          })
-          .catch(() => {
-            showMsg(`'${newName}' was already deleted from the server`, 'error')
-            setPersons(persons.filter(per => per.id !== personExists.id))
-            setNewName('')
-            setNewPhone('')
-          })
-      } else if (!personExists) {
-        service.addPerson(person)
+    const personExists = persons.find(per => per.name.toLowerCase() === newName.toLowerCase())
+    if (
+      personExists && 
+      window.confirm(`${newName} is already added to phone book, replace the old number with a new one?`)
+    ) {
+      service.updatePerson(personExists.id, person)
         .then(resp => {
-          setPersons([...persons, resp])
-          showMsg(`Added ${newName}`, 'success')
+          setPersons(persons.map(per => per.id === resp.id ? resp : per))
+          showMsg(`Updated ${newName}'s number to  ${newPhone}`, 'success')
           setNewName('')
           setNewPhone('')
         })
-      }
+        .catch(err => {
+          // showMsg(`'${newName}' was already deleted from the server`, 'error')
+          // setPersons(persons.filter(per => per.id !== personExists.id))
+          showMsg(`${err.response.data.error}`, 'error')
+          setNewName('')
+          setNewPhone('')
+        })
+    } else if (!personExists) {
+      service.addPerson(person)
+      .then(resp => {
+        setPersons([...persons, resp])
+        showMsg(`Added ${newName}`, 'success')
+        setNewName('')
+        setNewPhone('')
+      })
+      .catch(err => {
+        console.log(err);
+        showMsg(`${err.response.data.error}`, 'error')
+      })
     }
   }
 
